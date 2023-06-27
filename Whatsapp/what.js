@@ -76,6 +76,15 @@ io.on('Connection', (socket) => {
         const { id } = data;
         createWhatsappSession(id, socket)
     });
+
+    socket.on('getAllChats', async (data)=> {
+        console.log('get all chats', data);
+        const client = allSessionObject[id];
+        const allChats = await client.getChats();
+        socket.emit('allChats', {
+            allChats,
+        });
+    });
 });
 
 
