@@ -71,7 +71,12 @@ const [id, setId] = useState('');
       }} 
       />
       <button onClick={createSessionForWhatsapp}>Create Session</button>
+
+      
+    
       <div>
+        <br>
+        </br>
         {id !=="" && <button onClick={getAllChats}>Get Chats</button>}
       </div>
       <QRCode value={qrCode} ></QRCode>  

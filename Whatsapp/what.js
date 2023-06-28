@@ -29,6 +29,10 @@ const io = new Server(server, {
     },
 });
 
+app.get('/', (req, res) => {
+    res.send('The Server is Running & Responding')
+})
+
 
 server.listen(port,()=>{
     console.log('Server Listening at :',port)
@@ -49,7 +53,6 @@ const createWhatsappSession = (id, socket) => {
     });
     
     client.on('qr', (qr) => {
-        // Generate and display QR code
         qrcode.generate(qr, { small: true });
         console.log('QR Code Created....')
         socket.emit('QR :', qr)
@@ -63,7 +66,7 @@ const createWhatsappSession = (id, socket) => {
         console.log('client is ready');
         allSessionObject[id] = client;
         socket.emit('session-bet-initiate');
-        // saveSession(sessionId, session);
+        
     });
 
     client.on('remote_session_saved',()=> {
@@ -104,6 +107,8 @@ const getWhatsappSession = (id, socket) => {
             message: 'Youre logget out, login again with QR code',
         });
     });
+
+    client.initialize();
 };
 
 io.on('Connection', (socket) => {
@@ -139,48 +144,3 @@ io.on('Connection', (socket) => {
     });
 });
 
-
-
-
-
-
-   
-
-
-
-
-
-
-// Function to initialize the client
-// async function initializeClient(sessionId) {
-//   const session = await loadSession(sessionId);
-//   const client = new Client({ session });
-
-//   client.on('qr', (qr) => {
-//     // Generate and display QR code
-//     qrcode.generate(qr, { small: true });
-//     console.log('QR Code Created....')
-//   });
-
-//   client.on('authenticated', (session) => {
-//     console.log('Client authenticated');
-//     allSe
-//     saveSession(sessionId, session);
-//   });
-
-//   client.on('ready', () => {
-//     console.log('Client is ready');
-//   });
-
-//   client.on('message', (message) => {
-//     console.log('New message:', message.body);
-//   });
-
-//   client.initialize();
-// }
-
-// // Specify a unique session ID for each user or session
-// const sessionId = 'Aniketwhatsapp1';
-
-// // Initialize the client with the provided session ID
-// initializeClient('Aniket');
