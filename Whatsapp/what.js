@@ -1,28 +1,39 @@
 const express = require("express");
-const { Client, RemoteAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+
+const { Client, RemoteAuth } = require('whatsapp-web.js');
+const { MongoStore } = require('wwebjs-mongo')
 const mongoose = require('mongoose');
-const MONGODB_URI = 'mongodb://127.0.0.1:27017/Whatsapp'
+const MONGODB_URI = 'mongodb://127.0.0.1:27017/Whatsapp';
 
 const app = express();
 const port = 3001;
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
-const io = new Server(server);
 
 
-server.listen(port,()=>{
-    console.log('Server is Running');
+let store;
+
+mongoose.connect(MONGODB_URI).then(()=> {
+    store = new MongoStore({ mongoose: mongoose });
+    console.log('MongoDB Connected');
+    console.log(store);
 });
 
 
-// let store;
-// mongoose.connect(MONGODB_URI).then(()=> {
-//     console.log('MongoDB Connected');
-//     store = new MongoStore({mongoose:mongoose});
-// })
+const io = new Server(server, {
+    cors:{
+        origin: 'http://localhost:3000',
+        methods: ['GET', 'POST'],
+    },
+});
 
+
+server.listen(port,()=>{
+    console.log('Server Listening at :',port)
+    console.log('Server is Running');
+});
 
 const allSessionObject = {};
 const createWhatsappSession = (id, socket) => { 
@@ -32,7 +43,8 @@ const createWhatsappSession = (id, socket) => {
         },
         authStrategy : new RemoteAuth({
             clientId: id,
-            // store: store,
+            store: store,
+            backupSyncIntervalMs: 300000
         }),
     });
     
@@ -56,9 +68,42 @@ const createWhatsappSession = (id, socket) => {
 
     client.on('remote_session_saved',()=> {
         console.log('Remote session saved : DB user created')
+        socket.emit('remote_session_saved', {
+            message: 'Remote Session Saved',
+        });
     });
     
     client.initialize();
+};
+
+
+const getWhatsappSession = (id, socket) => {
+    const client = new Client({
+        puppeteer:{
+            headless: false,
+        },
+        authStrategy : new RemoteAuth({
+            clientId: id,
+            store: store,
+            backupSyncIntervalMs: 300000
+        }),
+    });
+
+    client.on('ready', ()=> {
+        console.log('client is ready');
+        socket.emit('Ready !!!', {
+            id, 
+            message: 'Client is ready',
+            
+        });
+    });
+
+    client.on('qr', (qr) => {
+        socket.emit('qr', {
+            qr,
+            message: 'Youre logget out, login again with QR code',
+        });
+    });
 };
 
 io.on('Connection', (socket) => {
@@ -75,6 +120,13 @@ io.on('Connection', (socket) => {
         console.log(data);
         const { id } = data;
         createWhatsappSession(id, socket)
+    });
+
+
+    socket.on('getSessoin', (data) => {
+        console.log(data);
+        const { id } = data;
+        getWhatsappSession(id, socket)
     });
 
     socket.on('getAllChats', async (data)=> {
